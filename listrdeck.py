@@ -1,21 +1,23 @@
 from listr import Listr
 import sqlite3,typing
 from sqlite3 import Error
-DB_FILE = 'listr.db'
+DB_FILE = '/Users/woody/Developer/listr/listr.db'
 def init_db(db_str:str = DB_FILE):
     with sqlite3.connect(db_str) as conn:
         conn.execute('''DROP TABLE IF EXISTS listr;''')
+        conn.execute('PRAGMA foreign_keys = ON;')
         conn.execute('''
         CREATE TABLE IF NOT EXISTS listr (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             parent INTEGER NOT NULL,
             task TEXT NOT NULL,
             completed INTEGER NOT NULL,
+            CONSTRAINT parent_fk
             FOREIGN KEY(parent) REFERENCES listr (id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
         );''')
-        conn.execute('''INSERT INTO listr(parent,task,completed) VALUES(0,"Welcome To Listr",0); ''')
-        conn.execute('''INSERT INTO listr(parent,task,completed) VALUES(0,"Add lists by typing",0); ''')
-        conn.execute('''INSERT INTO listr(parent,task,completed) VALUES(0,"Add lists by typing",0); ''')
+        conn.execute('INSERT INTO listr(id,parent,task,completed) VALUES(0,0,"root",0)')
     print('initialized database')
 def db_result_to_listr(tup):
         return Listr(tup[2],tup[0],tup[3],tup[1])
@@ -24,6 +26,7 @@ class ListrDB:
         if conn is None:
             try:
                 conn = sqlite3.connect(DB_FILE)
+                conn.execute('PRAGMA foreign_keys=ON')
             except Error as e:
                 print(e)
         self.conn = conn
@@ -54,7 +57,14 @@ class ListrDB:
         cursor = self.conn.cursor()
         cursor = cursor.execute(query)
         return Listr(task,id=cursor.lastrowid,parent=parent)
-    def complete(id):
+    def complete(self,id):
         query = f'UPDATE listr SET completed = 1 WHERE id = {id}'
-if __name__ == '__main__':
-    init_db()
+        cursor = self.conn.cursor()
+        cursor = cursor.execute(query)
+        self.conn.commit()
+    def delete(self,id):
+        query = f'DELETE FROM listr WHERE id={id}'
+        cursor = self.conn.cursor()
+        cursor = cursor.execute(query)
+    if __name__ == '__main__':
+        init_db()
