@@ -48,7 +48,8 @@ class ListrDB:
         children:typing.List[int] = []
         data = cursor.execute(query).fetchall()
         for d in data:
-            children.append(db_result_to_listr(d))
+            if d[0] != d[1]:
+                children.append(db_result_to_listr(d))
         return children
     def get_root(self):
         return self.get_sublist(0)
