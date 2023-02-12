@@ -1,3 +1,4 @@
 .DS_Store
 listr.db
 __pycache__/*
+listr_env/*
