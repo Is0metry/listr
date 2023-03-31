@@ -1,4 +1,5 @@
 .DS_Store
 listr.db
-__pycache__/*
+*/__pycache__/*
 listr_env/*
+instance/flaskr.sqlite
