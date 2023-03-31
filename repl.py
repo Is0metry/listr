@@ -3,7 +3,7 @@ import sqlite3
 from typing import List
 from listr import Listr
 
-from listrdeck import ListrDB
+from listrdb import ListrDB
 ROOT_LISTR = Listr("root", 0, parent=0)
 
 
