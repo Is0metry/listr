@@ -1,4 +1,5 @@
 import functools
+from uuid import uuid4
 
 from flask import (Blueprint, flash, g, redirect, render_template, request,
                    session, url_for)
@@ -36,11 +37,25 @@ def register():
 
         if error is None:
             try:
-                db.execute(
-                    "INSERT INTO user (username, password) VALUES (?, ?)",
-                    (username, generate_password_hash(password)),
+                cursor = db.cursor()
+                cursor = cursor.execute(
+                    '''INSERT INTO user (username, password,root)
+                     VALUES (?, ?,?);''',
+                    (username, generate_password_hash(password),-1)
+                )
+                user_id = cursor.lastrowid
+                cursor = cursor.execute(
+                    '''INSERT INTO listr (user, parent, task, completed)
+                    VALUES (?, ?, ?, ?);''',
+                    (user_id, -1, f"{username}", 0)
+                )
+                root_id = cursor.lastrowid
+                cursor = cursor.execute(
+                    '''UPDATE user SET root = ? WHERE id = ?;''',
+                    (root_id, user_id)
                 )
                 db.commit()
+                cursor.close()
             except db.IntegrityError:
                 error = f"User {username} is already registered."
             else:
@@ -70,6 +85,8 @@ def login():
         if error is None:
             session.clear()
             session['user_id'] = user['id']
+            session['root'] = user['root']
+            session['current_list'] = user['root']
             return redirect(url_for('index'))
 
         flash(error)

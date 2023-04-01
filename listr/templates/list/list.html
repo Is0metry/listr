@@ -1,0 +1,24 @@
+{% extends 'base.html'%}
+
+{% block header %}
+<h1>
+    {% if parent['parent'] > 0%}
+    <a href="{{url_for(list.get_list, list_id=parent['parent'])}}">&lt;-</a>
+    {{parent['task']}}
+    {% else %}
+    Your Root Listr
+    {%endif%}
+</h1>
+{% endblock %}
+{% block content %}
+<ol>
+
+    {% for listr in listrs%}
+    <li><a href="{{url_for(list.get_list, list_id=listr['id'])}}">{{listr['task']}}</a></li>
+    {% endfor %}
+</ol>
+<form action="{{url_for('list.get_list',list_id=parent['id'])}}" method="POST">
+    <input name="task" id="task" placeholder="enter new task here">
+    <input type="submit" value="Add">
+</form>
+    {% endblock %}
