@@ -10,6 +10,8 @@ bp = Blueprint('list', __name__)
 
 @bp.route('/')
 def index():
+    if g.user is None:
+         return redirect(url_for('auth.login'))
     current_list = session.get('current_list')
     if current_list is None:
         current_list = session['root']
@@ -35,9 +37,7 @@ def get_list(list_id):
         abort(403, "this Listr doesn't belong to you. Naughty!")
     if request.method == 'POST':
         task = request.form['task']
-        error = None
-        if not task:
-            error = 'Task is required.'
+        error = None if not task else "You can't submit an empty task"
         if error is not None:
             flash(error)
         else:
@@ -47,11 +47,32 @@ def get_list(list_id):
                 (list_id,user_id, task)
             )
             db.commit()
+    session['current_list'] = list_id
     query = '''
         SELECT id, task, completed
         FROM listr
         WHERE parent = ?;'''
-    if (listrs := cursor.execute(query, (list_id,)).fetchall()):
-        listrs = []
+    listrs = cursor.execute(query, (parent['id'],)).fetchall()
+    cursor.close()
     return render_template('list/list.html', parent=parent, listrs=listrs)
+
+@bp.route('/complete/<list_id>', methods=['GET'])
+def toggle_completed(list_id:int):
+    db = get_db()
+    cursor = db.cursor()
+    user_id = session.get('user_id')
     
+    query = '''
+    UPDATE listr
+    SET completed
+    = NOT completed
+    WHERE id = ?
+    AND user = ?
+    '''
+    cursor.execute(query,(list_id, user_id))
+    db.commit()
+    return redirect(url_for('list.get_list',list_id=session['current_list']))
+
+
+
+
